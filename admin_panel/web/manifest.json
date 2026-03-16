@@ -1,0 +1,8 @@
+{
+  "name": "News Admin",
+  "short_name": "News Admin",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0175C2",
+  "theme_color": "#0175C2"
+}

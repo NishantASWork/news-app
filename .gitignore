@@ -1,0 +1,50 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.packages
+build/
+*.iml
+.metadata
+
+# Firebase
+.firebaserc
+*.log
+google-services.json
+GoogleService-Info.plist
+lib/firebase_options.dart
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Android
+mobile_app/android/local.properties
+mobile_app/android/.gradle/
+mobile_app/android/app/debug/
+mobile_app/android/app/profile/
+mobile_app/android/app/release/
+mobile_app/android/captures/
+mobile_app/android/gradle/wrapper/gradle-wrapper.jar
+
+# iOS
+mobile_app/ios/Flutter/Flutter.framework
+mobile_app/ios/Flutter/Flutter.podspec
+mobile_app/ios/Pods/
+mobile_app/ios/.symlinks/
+mobile_app/ios/Flutter/App.framework
+mobile_app/ios/Flutter/Flutter.framework
+mobile_app/ios/Flutter/flutter_assets/
+mobile_app/ios/ServiceDefinitions.json
+
+# Web
+admin_panel/web/flutter_bootstrap.js
+admin_panel/web/flutter.js
+admin_panel/web/main.dart.js
+admin_panel/web/main.dart.js.map
+admin_panel/web/version.json
+
+# Env
+.env
+.env.*
