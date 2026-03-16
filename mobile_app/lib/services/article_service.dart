@@ -30,13 +30,18 @@ class ArticleService {
     return Article.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>);
   }
 
-  Future<String> createArticle(Map<String, dynamic> data) async {
-    final ref = await _firestore.collection('articles').add({
+  /// Generates a new document ID without writing. Use with [createArticleWithId] after uploading images.
+  String generateArticleId() {
+    return _firestore.collection('articles').doc().id;
+  }
+
+  /// Creates an article with the given ID and data (e.g. after uploading image with this id).
+  Future<void> createArticleWithId(String id, Map<String, dynamic> data) async {
+    await _firestore.collection('articles').doc(id).set({
       ...data,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
-    return ref.id;
   }
 
   Future<void> updateArticle(String id, Map<String, dynamic> data) async {

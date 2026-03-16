@@ -84,13 +84,25 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete category?'),
-        content: Text('Delete "${c.name}"?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('"${c.name}" will be permanently removed.'),
+            const SizedBox(height: 8),
+            const Text(
+              'Articles using this category will keep it as a reference.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -100,7 +112,20 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     if (ok == true && context.mounted) {
       await context.read<CategoryService>().deleteCategory(c.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleted')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.onInverseSurface),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Category deleted: "${c.name}"')),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          ),
+        );
       }
     }
   }

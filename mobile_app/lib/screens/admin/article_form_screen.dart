@@ -114,24 +114,24 @@ class _AdminArticleFormScreenState extends State<AdminArticleFormScreen> {
           'publishedAt': Timestamp.fromDate(_publishedAt),
         });
       } else {
-        final ref = await articleService.createArticle({
-          'title': _titleController.text.trim(),
-          'description': _descriptionController.text.trim(),
-          'content': _contentController.text.trim(),
-          'author': _authorController.text.trim(),
-          'categoryId': _categoryId ?? '',
-          'imageUrl': null,
-          'publishedAt': Timestamp.fromDate(_publishedAt),
-        });
-        articleId = ref;
+        // Get ID first, upload image (if any), then create article in one write — no update step.
+        articleId = articleService.generateArticleId();
         if (_pickedImageBytes != null) {
           imageUrl = await storageService.uploadArticleImage(
             articleId,
             _pickedImageBytes!,
             _pickedExtension,
           );
-          await articleService.updateArticle(articleId, {'imageUrl': imageUrl});
         }
+        await articleService.createArticleWithId(articleId, {
+          'title': _titleController.text.trim(),
+          'description': _descriptionController.text.trim(),
+          'content': _contentController.text.trim(),
+          'author': _authorController.text.trim(),
+          'categoryId': _categoryId ?? '',
+          'imageUrl': imageUrl,
+          'publishedAt': Timestamp.fromDate(_publishedAt),
+        });
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved')));
@@ -187,15 +187,23 @@ class _AdminArticleFormScreenState extends State<AdminArticleFormScreen> {
               maxLines: 2,
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _categoryId,
+            DropdownButtonFormField<String?>(
+              value: _categoryId != null &&
+                      _categories.any((c) => c.id == _categoryId)
+                  ? _categoryId
+                  : null,
               decoration: const InputDecoration(
                 labelText: 'Category',
                 border: OutlineInputBorder(),
               ),
-              items: _categories
-                  .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
-                  .toList(),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('Select category'),
+                ),
+                ..._categories
+                    .map((c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.name))),
+              ],
               onChanged: (v) => setState(() => _categoryId = v),
             ),
             const SizedBox(height: 16),

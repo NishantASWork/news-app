@@ -114,24 +114,24 @@ class _ArticleFormScreenState extends State<ArticleFormScreen> {
           'publishedAt': Timestamp.fromDate(_publishedAt),
         });
       } else {
-        final ref = await articleService.createArticle({
-          'title': _titleController.text.trim(),
-          'description': _descriptionController.text.trim(),
-          'content': _contentController.text.trim(),
-          'author': _authorController.text.trim(),
-          'categoryId': _categoryId ?? '',
-          'imageUrl': null,
-          'publishedAt': Timestamp.fromDate(_publishedAt),
-        });
-        articleId = ref;
+        // Get ID first, upload image (if any), then create article in one write — no update step.
+        articleId = articleService.generateArticleId();
         if (_pickedImageBytes != null) {
           imageUrl = await storageService.uploadArticleImage(
             articleId,
             _pickedImageBytes!,
             _pickedExtension,
           );
-          await articleService.updateArticle(articleId, {'imageUrl': imageUrl});
         }
+        await articleService.createArticleWithId(articleId, {
+          'title': _titleController.text.trim(),
+          'description': _descriptionController.text.trim(),
+          'content': _contentController.text.trim(),
+          'author': _authorController.text.trim(),
+          'categoryId': _categoryId ?? '',
+          'imageUrl': imageUrl,
+          'publishedAt': Timestamp.fromDate(_publishedAt),
+        });
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved')));

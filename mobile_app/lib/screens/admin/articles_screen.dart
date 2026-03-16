@@ -85,14 +85,18 @@ class AdminArticlesScreen extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.delete_outline, color: Colors.red, size: 32),
         title: const Text('Delete article?'),
-        content: Text('Delete "${a.title}"?'),
+        content: Text(
+          '"${a.title}" will be permanently removed. This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -102,7 +106,20 @@ class AdminArticlesScreen extends StatelessWidget {
     if (ok == true && context.mounted) {
       await context.read<ArticleService>().deleteArticle(a.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleted')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.onInverseSurface),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Article deleted: "${a.title}"')),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          ),
+        );
       }
     }
   }

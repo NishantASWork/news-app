@@ -130,14 +130,18 @@ class AdminCategoriesScreen extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.delete_outline, color: Colors.red, size: 32),
         title: const Text('Delete category?'),
-        content: Text('Delete "${c.name}"?'),
+        content: Text(
+          '"${c.name}" will be permanently removed. Articles using this category will keep it as a reference but the category will no longer appear in the list.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -147,7 +151,20 @@ class AdminCategoriesScreen extends StatelessWidget {
     if (ok == true && context.mounted) {
       await context.read<CategoryService>().deleteCategory(c.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleted')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.onInverseSurface),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Category deleted: "${c.name}"')),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          ),
+        );
       }
     }
   }
