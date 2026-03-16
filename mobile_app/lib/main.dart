@@ -14,7 +14,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   final prefs = await SharedPreferences.getInstance();
-  final darkMode = prefs.getBool(_keyDarkMode) ?? false;
+  final darkMode = prefs.getBool(_keyDarkMode) ?? true;
   runApp(
     MultiProvider(
       providers: [
