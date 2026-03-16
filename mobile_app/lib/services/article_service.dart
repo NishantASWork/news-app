@@ -40,10 +40,10 @@ class ArticleService {
   }
 
   Future<void> updateArticle(String id, Map<String, dynamic> data) async {
-    await _firestore.collection('articles').doc(id).update({
+    await _firestore.collection('articles').doc(id).set({
       ...data,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
   }
 
   Future<void> deleteArticle(String id) async {
