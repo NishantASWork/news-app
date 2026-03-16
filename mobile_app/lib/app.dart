@@ -2,31 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'services/auth_service.dart';
+import 'services/notification_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/bookmarks_screen.dart';
 import 'screens/detail_screen.dart';
+import 'screens/admin/articles_screen.dart';
+import 'screens/admin/article_form_screen.dart';
+import 'screens/admin/categories_screen.dart';
+import 'widgets/admin_layout.dart';
 
 class ThemeNotifier extends ChangeNotifier {
-  ThemeNotifier({bool initialDark = false, this.onToggle}) : _isDark = initialDark;
-  bool _isDark;
-  final void Function(bool isDark)? onToggle;
-  bool get isDark => _isDark;
-  set isDark(bool v) {
-    if (_isDark == v) return;
-    _isDark = v;
-    onToggle?.call(_isDark);
+  static const String systemKey = 'system';
+  static const String lightKey = 'light';
+  static const String darkKey = 'dark';
+
+  ThemeNotifier({String initialModeKey = systemKey, this.onModeChanged})
+      : _modeKey = initialModeKey;
+
+  String _modeKey;
+  final void Function(String modeKey)? onModeChanged;
+
+  String get modeKey => _modeKey;
+  ThemeMode get themeMode {
+    switch (_modeKey) {
+      case lightKey:
+        return ThemeMode.light;
+      case darkKey:
+        return ThemeMode.dark;
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  void setMode(String key) {
+    if (_modeKey == key) return;
+    _modeKey = key;
+    onModeChanged?.call(_modeKey);
     notifyListeners();
   }
-  void toggle() {
-    _isDark = !_isDark;
-    onToggle?.call(_isDark);
-    notifyListeners();
+
+  void cycleMode() {
+    final next = _modeKey == systemKey
+        ? lightKey
+        : _modeKey == lightKey
+            ? darkKey
+            : systemKey;
+    setMode(next);
   }
+
+  bool get isDark => _modeKey == darkKey;
 }
 
+
 class App extends StatelessWidget {
-  const App({super.key});
+  const App({super.key, this.scaffoldKey});
+
+  final GlobalKey<ScaffoldMessengerState>? scaffoldKey;
 
   @override
   Widget build(BuildContext context) {
@@ -36,15 +68,45 @@ class App extends StatelessWidget {
         final goRouter = GoRouter(
           initialLocation: '/',
           redirect: (context, state) {
-            final onLogin = state.matchedLocation == '/login';
+            final loc = state.matchedLocation;
+            final onLogin = loc == '/login';
             if (!isLoggedIn && !onLogin) return '/login';
             if (isLoggedIn && onLogin) return '/';
+            if (isLoggedIn && (loc.startsWith('/admin') || loc == '/admin')) {
+              if (!auth.isAdmin) return '/';
+            }
             return null;
           },
           routes: [
             GoRoute(
               path: '/login',
               builder: (_, __) => const LoginScreen(),
+            ),
+            ShellRoute(
+              builder: (context, state, child) => AdminLayout(child: child),
+              routes: [
+                GoRoute(
+                  path: '/admin/articles',
+                  builder: (_, __) => const AdminArticlesScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      builder: (_, __) => const AdminArticleFormScreen(articleId: 'new'),
+                    ),
+                    GoRoute(
+                      path: ':id',
+                      builder: (context, state) {
+                        final id = state.pathParameters['id']!;
+                        return AdminArticleFormScreen(articleId: id == 'new' ? 'new' : id);
+                      },
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: '/admin/categories',
+                  builder: (_, __) => const AdminCategoriesScreen(),
+                ),
+              ],
             ),
             StatefulShellRoute.indexedStack(
               builder: (context, state, navigationShell) => Scaffold(
@@ -95,7 +157,15 @@ class App extends StatelessWidget {
           ],
         );
         return Consumer<ThemeNotifier>(
-          builder: (context, theme, _) => MaterialApp.router(
+          builder: (context, theme, _) {
+            if (scaffoldKey != null) {
+              final notifier = context.read<NotificationService>();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                notifier.setGoRouter(goRouter);
+              });
+            }
+            return MaterialApp.router(
+            scaffoldMessengerKey: scaffoldKey,
             title: 'News App',
             theme: ThemeData.from(
               colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
@@ -108,9 +178,10 @@ class App extends StatelessWidget {
               ),
               useMaterial3: true,
             ),
-            themeMode: theme.isDark ? ThemeMode.dark : ThemeMode.light,
+            themeMode: theme.themeMode,
             routerConfig: goRouter,
-          ),
+          );
+          },
         );
       },
     );

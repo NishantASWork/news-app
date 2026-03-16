@@ -1,15 +1,45 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/user_profile.dart';
 
-class AuthService {
+class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   User? get currentUser => _auth.currentUser;
+
+  bool _isAdmin = false;
+  bool get isAdmin => _isAdmin;
+
+  AuthService() {
+    _loadRole(_auth.currentUser).then((_) => notifyListeners());
+    _auth.authStateChanges().listen((user) async {
+      if (user == null) {
+        _isAdmin = false;
+        notifyListeners();
+        return;
+      }
+      await _loadRole(user);
+      notifyListeners();
+    });
+  }
+
+  Future<void> _loadRole(User? user) async {
+    if (user == null) {
+      _isAdmin = false;
+      return;
+    }
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      _isAdmin = (doc.data()?['role'] == 'admin');
+    } catch (_) {
+      _isAdmin = false;
+    }
+  }
 
   Future<UserProfile?> get currentUserProfile async {
     final user = _auth.currentUser;

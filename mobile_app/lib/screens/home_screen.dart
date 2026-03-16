@@ -99,11 +99,13 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none),
-            tooltip: 'Simulate notification',
+            tooltip: 'Notifications',
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('🔔 Breaking: You have 3 new articles to read.'),
+                  content: const Text(
+                    'Push notifications are enabled. When the server sends a notification, it will appear here.',
+                  ),
                   behavior: SnackBarBehavior.floating,
                   duration: const Duration(seconds: 3),
                 ),
@@ -112,9 +114,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: Icon(
-              context.watch<ThemeNotifier>().isDark ? Icons.light_mode : Icons.dark_mode,
+              context.watch<ThemeNotifier>().modeKey == ThemeNotifier.darkKey
+                  ? Icons.light_mode
+                  : context.watch<ThemeNotifier>().modeKey == ThemeNotifier.lightKey
+                      ? Icons.dark_mode
+                      : Icons.brightness_auto,
             ),
-            onPressed: () => context.read<ThemeNotifier>().toggle(),
+            onPressed: () => context.read<ThemeNotifier>().cycleMode(),
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

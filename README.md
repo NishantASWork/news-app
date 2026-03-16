@@ -4,8 +4,8 @@ A simple mobile news application with an admin panel and Firebase backend.
 
 ## Structure
 
-- **mobile_app/** – Flutter mobile app (iOS/Android) for reading news, auth, and bookmarks
-- **admin_panel/** – Flutter web admin for managing articles and categories
+- **mobile_app/** – Single Flutter app: reader (home, bookmarks) + **admin panel** (RBAC). Admins see "Admin panel" in the drawer and can manage articles and categories.
+- **functions/** – Cloud Function to send a test push notification to the app (topic `news`).
 - **firebase.json**, **firestore.rules**, **storage.rules** – Firebase config and security rules
 
 ## Prerequisites
@@ -31,16 +31,12 @@ firebase login
 ## Configure Apps
 
 ```bash
-# Mobile app
 cd mobile_app && flutterfire configure
-
-# Admin panel
-cd admin_panel && flutterfire configure
 ```
 
-Select your Firebase project and the platforms (Android, iOS, Web) for each app. This generates `lib/firebase_options.dart` in each project.
+Select your Firebase project and the platforms (Android, iOS, Web). This generates `lib/firebase_options.dart`. Enable **Cloud Messaging** in Firebase Console for push notifications.
 
-## Run Mobile App
+## Run the App
 
 ```bash
 cd mobile_app
@@ -49,19 +45,21 @@ flutter run
 # Or: flutter run -d chrome (for web)
 ```
 
-## Run Admin Panel
+- **Theme:** Default is system theme (light/dark follows device). Use the app bar icon to cycle system → light → dark.
+- **Admin (RBAC):** To grant admin access, set the user's `role` in Firestore: in `users/{userId}` add field `role: "admin"`. Only those users see "Admin panel" in the drawer and can open `/admin/articles` and `/admin/categories`.
+- **Push notifications:** The app subscribes to FCM topic `news`. When the server (or Cloud Function) sends a message to that topic, the app shows it in-app (SnackBar) and can open an article if the payload includes `articleId` or `id`. To send a test notification from the web, deploy and call the Cloud Function:
+  ```bash
+  firebase deploy --only functions
+  # Then POST the function URL (see Firebase Console → Functions) or use a small web page that calls it.
+  ```
+  The function URL is `https://<region>-<project>.cloudfunctions.net/sendTestNotification`.
 
-```bash
-cd admin_panel
-flutter pub get
-flutter run -d chrome
-# Or: flutter run -d web-server
-```
-
-## Deploy Rules
+## Deploy Rules and Functions
 
 ```bash
 firebase deploy --only firestore:rules,storage
+# Optional: deploy Cloud Function to send test notifications
+firebase deploy --only functions
 ```
 
 ## Firestore index (optional)

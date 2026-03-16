@@ -96,9 +96,13 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              context.watch<ThemeNotifier>().isDark ? Icons.light_mode : Icons.dark_mode,
+              context.watch<ThemeNotifier>().modeKey == ThemeNotifier.darkKey
+                  ? Icons.light_mode
+                  : context.watch<ThemeNotifier>().modeKey == ThemeNotifier.lightKey
+                      ? Icons.dark_mode
+                      : Icons.brightness_auto,
             ),
-            onPressed: () => context.read<ThemeNotifier>().toggle(),
+            onPressed: () => context.read<ThemeNotifier>().cycleMode(),
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

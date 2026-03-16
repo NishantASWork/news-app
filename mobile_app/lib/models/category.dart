@@ -22,4 +22,8 @@ class Category {
       order: (data['order'] as num?)?.toInt() ?? 0,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {'name': name, 'slug': slug, 'order': order};
+  }
 }
