@@ -114,7 +114,17 @@ Notifications are sent from the **admin-web** API route using your Firebase serv
 - User opens the **mobile app** and **signs in** → app saves FCM token to `users/{uid}/fcmTokens`.
 - Admin opens **admin-web**, clicks **“Send to all devices”** → request goes to **same app** at `/api/send-notification`, which reads tokens from Firestore and sends via FCM.
 
-If nobody receives: ensure at least one user has opened the app **while logged in**, then try “Send to all devices” again.
+### Will notifications work now? Checklist
+
+| Step | What to do |
+|------|------------|
+| 1 | **Repo root** has `google-services.json` (Android config). You have this. |
+| 2 | **Service account key for sending:** Firebase Console → Project settings → **Service accounts** → **Generate new private key** → save the downloaded JSON as **`mobile_app/service.json`**. Without this, the admin “Send to all devices” button will show an error (your `google-services.json` is client config, not a service account). |
+| 3 | **Firestore rules:** run `firebase deploy --only firestore:rules` so the app can write FCM tokens. |
+| 4 | **Mobile app:** run the app on a device/emulator, **sign in** (email or Google) once so the token is saved to Firestore. |
+| 5 | **Admin:** run `cd admin-web && npm run dev`, open the app, click **“Send to all devices”**. |
+
+If the admin shows *“google-services.json is the Android client config…”*, add **`mobile_app/service.json`** (the service account key from step 2). If it says *“No device tokens registered”*, open the mobile app and sign in, then try again.
 
 ## Deploy Firestore rules
 
