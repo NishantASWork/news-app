@@ -1,0 +1,9 @@
+{
+  "_comment": "Same Firebase project as the Flutter app (google-services.json / firebase_options). Add a Web app in Firebase Console and set NEXT_PUBLIC_FIREBASE_APP_ID if needed.",
+  "projectId": "basic-news-app-demo",
+  "storageBucket": "basic-news-app-demo.firebasestorage.app",
+  "messagingSenderId": "631020485784",
+  "apiKey": "AIzaSyA3oA6Bi4glZTE6EpWA04uYYH2chNV-Rv0",
+  "authDomain": "basic-news-app-demo.firebaseapp.com",
+  "appId": "1:631020485784:web:0000000000000000000000"
+}

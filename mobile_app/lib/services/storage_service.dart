@@ -18,7 +18,7 @@ class StorageService {
     if (fromEnv.isNotEmpty) return fromEnv;
     final fromDefine = const String.fromEnvironment('IMGBB_API_KEY', defaultValue: '');
     if (fromDefine.isNotEmpty) return fromDefine;
-    return '3dfc2f452f7ffced3f57b161f711a290';
+    return '';
   }
 
   static const _uploadUrl = 'https://api.imgbb.com/1/upload';
@@ -58,7 +58,7 @@ class StorageService {
 
   /// ImgBB hosts images externally; we don't delete them from here.
   Future<void> deleteArticleImage(String pathOrUrl) async {
-    // No-op: images stay on ImgBB. Optional: call ImgBB delete_url if stored.
+    // No-op: images stay on ImgBB.
   }
 }
 
