@@ -5,7 +5,6 @@ import '../models/article.dart';
 import '../models/category.dart';
 import '../services/article_service.dart';
 import '../services/category_service.dart';
-import 'article_form_screen.dart';
 
 class ArticlesScreen extends StatelessWidget {
   const ArticlesScreen({super.key});
@@ -108,12 +107,15 @@ class ArticlesScreen extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.onInverseSurface),
-                const SizedBox(width: 12),
-                Expanded(child: Text('Article deleted: "${a.title}"')),
-              ],
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.onInverseSurface),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text('Article deleted: "${a.title}"')),
+                ],
+              ),
             ),
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 4),

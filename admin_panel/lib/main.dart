@@ -85,6 +85,12 @@ class AdminApp extends StatelessWidget {
           theme: ThemeData.from(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
             useMaterial3: true,
+          ).copyWith(
+            snackBarTheme: SnackBarThemeData(
+              behavior: SnackBarBehavior.floating,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              contentTextStyle: const TextStyle(fontSize: 13),
+            ),
           ),
           routerConfig: router,
         );

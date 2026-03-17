@@ -31,7 +31,12 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+          SnackBar(
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Text(e.toString().replaceFirst('Exception: ', '')),
+            ),
+          ),
         );
       }
     } finally {
@@ -45,7 +50,14 @@ class _LoginScreenState extends State<LoginScreen> {
       await context.read<AuthService>().signInWithGoogle();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Text(e.toString()),
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _loading = false);

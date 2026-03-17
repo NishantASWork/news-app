@@ -74,7 +74,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         'order': 0,
       });
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Category added')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: const Text('Category added'),
+            ),
+          ),
+        );
       }
     }
   }
@@ -114,12 +121,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.onInverseSurface),
-                const SizedBox(width: 12),
-                Expanded(child: Text('Category deleted: "${c.name}"')),
-              ],
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.onInverseSurface),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text('Category deleted: "${c.name}"')),
+                ],
+              ),
             ),
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 4),
