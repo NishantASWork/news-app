@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/article.dart';
@@ -54,7 +55,7 @@ class _DetailScreenState extends State<DetailScreen> {
         setState(() {
           _article = article;
           _categoryName = article != null
-              ? _categoryNameFor(categories, article!.categoryId)
+              ? _categoryNameFor(categories, article.categoryId)
               : null;
           _isBookmarked = bookmarked;
           _loading = false;
@@ -104,13 +105,24 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
     if (_error != null || _article == null) {
       return Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -130,6 +142,10 @@ class _DetailScreenState extends State<DetailScreen> {
     final dateStr = DateFormat.yMMMd().add_jm().format(article.publishedAt);
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
         title: const Text('Article'),
         actions: [
           IconButton(

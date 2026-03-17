@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedCategoryId;
   String _searchQuery = '';
   final _searchController = TextEditingController();
+  bool _categoriesLoading = true;
 
   @override
   void initState() {
@@ -38,7 +39,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadCategories() async {
     final repo = CategoryRepository();
     final list = await repo.getCategories();
-    if (mounted) setState(() => _categories = list);
+    if (mounted) setState(() {
+      _categories = list;
+      _categoriesLoading = false;
+    });
   }
 
   Future<void> _fetchPage(DocumentSnapshot? cursor) async {
@@ -128,7 +132,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: _categoriesLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -217,3 +223,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+

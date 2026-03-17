@@ -25,7 +25,7 @@ firebase login
 
 1. Create a project at [Firebase Console](https://console.firebase.google.com).
 2. Enable **Authentication** → Email/Password and Google sign-in.
-3. Create **Firestore Database** and **Storage**.
+3. Create **Firestore Database** (Storage is not used; article images use ImgBB).
 4. Register two apps: one **Android** (and optionally **iOS**) for the mobile app, one **Web** for the admin panel.
 
 ## Configure Apps
@@ -36,13 +36,31 @@ cd mobile_app && flutterfire configure
 
 Select your Firebase project and the platforms (Android, iOS, Web). This generates `lib/firebase_options.dart`. Enable **Cloud Messaging** in Firebase Console for push notifications.
 
+## Image upload (New Article / Edit Article)
+
+Article images are uploaded to **ImgBB** (free), and the image URL is stored in Firestore. Firebase Storage is not used.
+
+1. Get a free API key at [api.imgbb.com](https://api.imgbb.com/).
+2. Set the key via **environment variable** (recommended for mobile/desktop) or **dart-define**:
+   ```bash
+   # Option A: environment variable (inherited by flutter run)
+   export IMGBB_API_KEY=your_imgbb_api_key
+   flutter run -d android
+   ```
+   ```bash
+   # Option B: dart-define (works on all platforms including web)
+   flutter run -d android --dart-define=IMGBB_API_KEY=your_key
+   ```
+
+Without the key, saving an article with an image will show an error asking you to set `IMGBB_API_KEY`.
+
 ## Run the App
 
 ```bash
 cd mobile_app
 flutter pub get
 flutter run
-# Or: flutter run -d chrome (for web)
+# Or: flutter run -d chrome (set IMGBB_API_KEY in env or --dart-define for image upload)
 ```
 
 - **Theme:** Default is system theme (light/dark follows device). Use the app bar icon to cycle system → light → dark.
@@ -57,7 +75,7 @@ flutter run
 ## Deploy Rules and Functions
 
 ```bash
-firebase deploy --only firestore:rules,storage
+firebase deploy --only firestore:rules
 # Optional: deploy Cloud Function to send test notifications
 firebase deploy --only functions
 ```

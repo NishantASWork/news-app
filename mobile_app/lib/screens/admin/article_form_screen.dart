@@ -34,10 +34,12 @@ class _AdminArticleFormScreenState extends State<AdminArticleFormScreen> {
   List<Category> _categories = [];
 
   bool get isEditing => widget.articleId != null && widget.articleId != 'new';
+  bool _initialLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _initialLoading = isEditing;
     _loadCategories();
     if (isEditing) _loadArticle();
   }
@@ -49,15 +51,18 @@ class _AdminArticleFormScreenState extends State<AdminArticleFormScreen> {
 
   Future<void> _loadArticle() async {
     final a = await context.read<ArticleService>().getArticle(widget.articleId!);
-    if (a != null && mounted) {
+    if (mounted) {
       setState(() {
-        _titleController.text = a.title;
-        _descriptionController.text = a.description;
-        _contentController.text = a.content;
-        _authorController.text = a.author;
-        _categoryId = a.categoryId;
-        _publishedAt = a.publishedAt;
-        _imageUrl = a.imageUrl;
+        if (a != null) {
+          _titleController.text = a.title;
+          _descriptionController.text = a.description;
+          _contentController.text = a.content;
+          _authorController.text = a.author;
+          _categoryId = a.categoryId;
+          _publishedAt = a.publishedAt;
+          _imageUrl = a.imageUrl;
+        }
+        _initialLoading = false;
       });
     }
   }
@@ -150,6 +155,10 @@ class _AdminArticleFormScreenState extends State<AdminArticleFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
         title: Text(isEditing ? 'Edit Article' : 'New Article'),
         actions: [
           TextButton(
@@ -164,7 +173,9 @@ class _AdminArticleFormScreenState extends State<AdminArticleFormScreen> {
           ),
         ],
       ),
-      body: Form(
+      body: _initialLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -260,3 +271,4 @@ class _AdminArticleFormScreenState extends State<AdminArticleFormScreen> {
     );
   }
 }
+
