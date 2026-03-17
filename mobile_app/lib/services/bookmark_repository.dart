@@ -76,9 +76,37 @@ class BookmarkRepository {
     for (final id in ids) {
       final doc = await _firestore.collection('articles').doc(id).get();
       if (doc.exists && doc.data() != null) {
-        articles.add(Article.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>));
+        articles.add(Article.fromFirestore(doc));
       }
     }
     return articles;
+  }
+
+  /// Stream of bookmarked articles — updates in real time when user adds/removes bookmarks.
+  Stream<List<Article>> bookmarkedArticlesStream() {
+    final uid = _uid;
+    if (uid == null) return Stream.value([]);
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('bookmarks')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .asyncMap((bookmarksSnap) async {
+          if (bookmarksSnap.docs.isEmpty) return <Article>[];
+          final ids = bookmarksSnap.docs
+              .map((d) => d.data()['articleId'] as String? ?? d.id)
+              .where((id) => id.isNotEmpty)
+              .toList();
+          if (ids.isEmpty) return <Article>[];
+          final articles = <Article>[];
+          for (final id in ids) {
+            final doc = await _firestore.collection('articles').doc(id).get();
+            if (doc.exists && doc.data() != null) {
+              articles.add(Article.fromFirestore(doc));
+            }
+          }
+          return articles;
+        });
   }
 }
