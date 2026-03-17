@@ -66,7 +66,7 @@ flutter run
 
 - **Theme:** Default is system theme (light/dark follows device). Use the app bar icon to cycle system → light → dark.
 - **Admin (RBAC, in-app):** To grant admin access in the Flutter app, set the user's `role` in Firestore: in `users/{userId}` add field `role: "admin"`. Only those users see "Admin panel" in the drawer and can open `/admin/articles` and `/admin/categories`.
-- **Push notifications:** The app subscribes to FCM topic `news`. When the server (or Cloud Function) sends a message to that topic, the app shows it in-app (SnackBar) and can open an article if the payload includes `articleId` or `id`. Deploy the Cloud Function and use the **admin-web** "Push notification" button, or POST the function URL. The function URL is `https://<region>-<project>.cloudfunctions.net/sendTestNotification`.
+- **Push notifications:** The app saves each device’s FCM token to Firestore when the user is logged in. The admin clicks **“Send to all devices”** to send a notification to every registered device. See **Push notifications – free setup** below.
 
 ## Run the admin panel (admin-web)
 
@@ -78,12 +78,48 @@ npm run dev
 
 Create `.env.local` with your Firebase config (e.g. `NEXT_PUBLIC_*` from your Firebase project) and optionally `NEXT_PUBLIC_IMGBB_API_KEY` for image uploads. The admin panel supports login (email + Google), articles, categories, image upload via ImgBB, and a "Push notification" button to send a test notification to the mobile app. Use the sidebar theme button to switch light / dark / system.
 
-## Deploy Rules and Functions
+## Push notifications – 100% free (no Blaze, no Cloud Functions)
+
+Notifications are sent from the **admin-web** API route using your Firebase service account. No Cloud Functions and no Blaze plan.
+
+### What’s free
+
+- **FCM, Firestore, Auth** – Firebase free tier.
+- **Sending** – Admin panel’s Next.js API route (`/api/send-notification`) uses Firebase Admin SDK; no Cloud Functions or billing plan needed.
+
+### One-time setup
+
+1. **Firebase Console**  
+   - **Build** → **Cloud Messaging** (no extra config).  
+   - **Project settings** → **Service accounts** → **Generate new private key** → download the JSON file.
+
+2. **Single `google-services.json` at repo root**  
+   Put your Firebase Android config at **`google-services.json`** in the repo root (same folder as `admin-web/`, `mobile_app/`).  
+   - **Android**: The mobile app build copies it into `mobile_app/android/app/` automatically so the Google Services plugin uses it.  
+   - **Admin send-notification**: That file is the *client* config and cannot send FCM. For “Send to all devices” you need a **service account key**: Firebase Console → Project settings → Service accounts → Generate new private key. Save that JSON as **`mobile_app/service.json`** (or set `FIREBASE_SERVICE_ACCOUNT_JSON` / `GOOGLE_APPLICATION_CREDENTIALS` in `admin-web/.env.local`). The API route checks repo-root `google-services.json` first and, if it’s the client config, tells you to use a service account key.
+
+3. **Firestore rules** (so the app can write FCM tokens):
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
+
+4. **Android**  
+   After `flutterfire configure`, run the app and sign in once so the device token is saved. Then “Send to all devices” in the admin will reach it.
+
+5. **iOS**  
+   Requires an Apple Developer account ($99/year) and APNs in Firebase. Skip if you only need Android.
+
+### Flow
+
+- User opens the **mobile app** and **signs in** → app saves FCM token to `users/{uid}/fcmTokens`.
+- Admin opens **admin-web**, clicks **“Send to all devices”** → request goes to **same app** at `/api/send-notification`, which reads tokens from Firestore and sends via FCM.
+
+If nobody receives: ensure at least one user has opened the app **while logged in**, then try “Send to all devices” again.
+
+## Deploy Firestore rules
 
 ```bash
 firebase deploy --only firestore:rules
-# Optional: deploy Cloud Function to send test notifications
-firebase deploy --only functions
 ```
 
 ## Firestore index (optional)

@@ -8,6 +8,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Use repo-root google-services.json: copy into app so the Google Services plugin finds it
+val repoRootGoogleServices = layout.projectDirectory.asFile.parentFile.parentFile.parentFile.resolve("google-services.json")
+val appGoogleServices = layout.projectDirectory.asFile.resolve("google-services.json")
+if (repoRootGoogleServices.exists()) {
+    repoRootGoogleServices.copyTo(appGoogleServices, overwrite = true)
+}
+
 android {
     namespace = "com.example.news_app"
     compileSdk = flutter.compileSdkVersion
