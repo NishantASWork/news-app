@@ -9,6 +9,10 @@ service cloud.firestore {
     match /users/{userId}/bookmarks/{articleId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+    // FCM tokens for push (device tokens); user can write own, Cloud Function reads all
+    match /users/{userId}/fcmTokens/{tokenId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
     // Articles: read for all, write for authenticated (admin check can be added via custom claims)
     match /articles/{articleId} {
       allow read: if true;

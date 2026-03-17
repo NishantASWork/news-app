@@ -13,7 +13,7 @@ export default function EditArticlePage() {
   }
   return (
     <div>
-      <h1 style={{ marginBottom: 24 }}>Edit article</h1>
+      <h1 className="page-title">Edit article</h1>
       <ArticleForm
         articleId={id}
         onSaved={() => router.push('/articles')}

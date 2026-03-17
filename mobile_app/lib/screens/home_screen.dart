@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedCategoryId;
   String _searchQuery = '';
   final _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  static const Duration _searchDebounceDuration = Duration(milliseconds: 320);
   bool _categoriesLoading = true;
 
   @override
@@ -45,6 +48,27 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  String? _categoryNameFor(String categoryId) {
+    try {
+      return _categories.firstWhere((c) => c.id == categoryId).name;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Search by article title only.
+  bool _articleMatchesSearch(Article a) {
+    final terms = _searchQuery
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (terms.isEmpty) return true;
+    final title = a.title.toLowerCase();
+    return terms.every((term) => title.contains(term));
+  }
+
   Future<void> _fetchPage(DocumentSnapshot? cursor) async {
     try {
       final result = await _articleRepo.getArticles(
@@ -53,13 +77,8 @@ class _HomeScreenState extends State<HomeScreen> {
         useCache: cursor == null,
       );
       final list = result.articles;
-      final filtered = _searchQuery.isEmpty
-          ? list
-          : list
-              .where((a) =>
-                  a.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                  a.description.toLowerCase().contains(_searchQuery.toLowerCase()))
-              .toList();
+      final filtered =
+          _searchQuery.trim().isEmpty ? list : list.where(_articleMatchesSearch).toList();
       final isLast = list.length < _pageSize;
       if (isLast) {
         _pagingController.appendLastPage(filtered);
@@ -73,6 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _pagingController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -90,7 +110,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _applySearch(String query) {
-    setState(() => _searchQuery = query);
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(_searchDebounceDuration, () {
+      if (mounted) {
+        setState(() => _searchQuery = query);
+        _pagingController.refresh();
+      }
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _searchDebounce?.cancel();
+    setState(() => _searchQuery = '');
     _pagingController.refresh();
   }
 
@@ -141,13 +173,23 @@ class _HomeScreenState extends State<HomeScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search news...',
+                hintText: 'Search by article title…',
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: _clearSearch,
+                        tooltip: 'Clear search',
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onChanged: _applySearch,
+              onChanged: (query) {
+                setState(() {}); // Rebuild so clear button appears when text is not empty
+                _applySearch(query);
+              },
             ),
           ),
           if (_categories.isNotEmpty)
@@ -183,16 +225,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 pagingController: _pagingController,
                 builderDelegate: PagedChildBuilderDelegate<Article>(
                   itemBuilder: (context, article, index) {
-                    final categoryName = _categories
-                        .cast<Category?>()
-                        .firstWhere(
-                          (c) => c?.id == article.categoryId,
-                          orElse: () => null,
-                        )
-                        ?.name;
                     return ArticleCard(
                       article: article,
-                      categoryName: categoryName,
+                      categoryName: _categoryNameFor(article.categoryId),
                       onTap: () => context.push('/article/${article.id}'),
                     );
                   },

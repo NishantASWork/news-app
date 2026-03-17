@@ -15,8 +15,11 @@ export default function HomePage() {
   }, [user, loading, router]);
 
   return (
-    <div style={{ padding: 24, textAlign: 'center' }}>
-      Loading...
+    <div className="admin-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <span className="admin-spinner" style={{ borderColor: 'var(--admin-border)', borderTopColor: 'var(--admin-primary)', width: 32, height: 32, marginBottom: 16, display: 'inline-block' }} />
+        <p style={{ color: 'var(--admin-text-muted)', fontSize: 14 }}>Loading...</p>
+      </div>
     </div>
   );
 }

@@ -1,10 +1,11 @@
 # News App
 
-A simple mobile news application with an admin panel and Firebase backend.
+A simple mobile news application with a web admin panel and Firebase backend.
 
 ## Structure
 
-- **mobile_app/** – Single Flutter app: reader (home, bookmarks) + **admin panel** (RBAC). Admins see "Admin panel" in the drawer and can manage articles and categories.
+- **mobile_app/** – Flutter app: reader (home, article detail, bookmarks), search, filter by category, infinite scroll, dark mode. Optionally includes in-app admin routes (RBAC) for articles/categories.
+- **admin-web/** – Next.js admin panel (web dashboard): login (email + Google), add/edit/delete articles, upload image (ImgBB), add/delete categories, send test push notification, dark mode.
 - **functions/** – Cloud Function to send a test push notification to the app (topic `news`).
 - **firebase.json**, **firestore.rules**, **storage.rules** – Firebase config and security rules
 
@@ -54,7 +55,7 @@ Article images are uploaded to **ImgBB** (free), and the image URL is stored in 
 
 Without the key, saving an article with an image will show an error asking you to set `IMGBB_API_KEY`.
 
-## Run the App
+## Run the mobile app
 
 ```bash
 cd mobile_app
@@ -64,13 +65,18 @@ flutter run
 ```
 
 - **Theme:** Default is system theme (light/dark follows device). Use the app bar icon to cycle system → light → dark.
-- **Admin (RBAC):** To grant admin access, set the user's `role` in Firestore: in `users/{userId}` add field `role: "admin"`. Only those users see "Admin panel" in the drawer and can open `/admin/articles` and `/admin/categories`.
-- **Push notifications:** The app subscribes to FCM topic `news`. When the server (or Cloud Function) sends a message to that topic, the app shows it in-app (SnackBar) and can open an article if the payload includes `articleId` or `id`. To send a test notification from the web, deploy and call the Cloud Function:
-  ```bash
-  firebase deploy --only functions
-  # Then POST the function URL (see Firebase Console → Functions) or use a small web page that calls it.
-  ```
-  The function URL is `https://<region>-<project>.cloudfunctions.net/sendTestNotification`.
+- **Admin (RBAC, in-app):** To grant admin access in the Flutter app, set the user's `role` in Firestore: in `users/{userId}` add field `role: "admin"`. Only those users see "Admin panel" in the drawer and can open `/admin/articles` and `/admin/categories`.
+- **Push notifications:** The app subscribes to FCM topic `news`. When the server (or Cloud Function) sends a message to that topic, the app shows it in-app (SnackBar) and can open an article if the payload includes `articleId` or `id`. Deploy the Cloud Function and use the **admin-web** "Push notification" button, or POST the function URL. The function URL is `https://<region>-<project>.cloudfunctions.net/sendTestNotification`.
+
+## Run the admin panel (admin-web)
+
+```bash
+cd admin-web
+npm install
+npm run dev
+```
+
+Create `.env.local` with your Firebase config (e.g. `NEXT_PUBLIC_*` from your Firebase project) and optionally `NEXT_PUBLIC_IMGBB_API_KEY` for image uploads. The admin panel supports login (email + Google), articles, categories, image upload via ImgBB, and a "Push notification" button to send a test notification to the mobile app. Use the sidebar theme button to switch light / dark / system.
 
 ## Deploy Rules and Functions
 

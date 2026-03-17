@@ -47,68 +47,69 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '48px auto', padding: 24 }}>
-      <h1 style={{ marginBottom: 8 }}>News Admin</h1>
-      <p style={{ color: '#666', marginBottom: 24 }}>
-        {isRegister ? 'Create an account' : 'Sign in to continue'}
-      </p>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: 12, border: '1px solid #ccc', borderRadius: 8 }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={isRegister ? 6 : 1}
-          style={{ padding: 12, border: '1px solid #ccc', borderRadius: 8 }}
-        />
-        {error && <p style={{ color: 'crimson', fontSize: 14 }}>{error}</p>}
+    <div className="login-page">
+      <div className="login-card card">
+        <h1 className="login-title">News Admin</h1>
+        <p className="login-subtitle">
+          {isRegister ? 'Create an account' : 'Sign in to continue'}
+        </p>
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="form-group">
+            <label className="label" htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              className="input"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </div>
+          <div className="form-group">
+            <label className="label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              className="input"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={isRegister ? 6 : 1}
+              autoComplete={isRegister ? 'new-password' : 'current-password'}
+            />
+          </div>
+          {error && <p className="login-error">{error}</p>}
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
+            {loading ? 'Please wait...' : isRegister ? 'Register' : 'Sign In'}
+          </button>
+        </form>
+        <div className="login-divider">or</div>
         <button
-          type="submit"
+          type="button"
+          className="btn btn-secondary"
+          onClick={handleGoogle}
           disabled={loading}
-          style={{
-            padding: 12,
-            background: '#1976d2',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            cursor: loading ? 'not-allowed' : 'pointer',
-          }}
+          style={{ width: '100%' }}
         >
-          {loading ? 'Please wait...' : isRegister ? 'Register' : 'Sign In'}
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.26c-.806.54-1.836.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+            <path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.658H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.658L3.964 6.99C4.672 4.864 6.656 3.28 9 3.28z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
         </button>
-      </form>
-      <button
-        type="button"
-        onClick={handleGoogle}
-        disabled={loading}
-        style={{
-          marginTop: 16,
-          width: '100%',
-          padding: 12,
-          background: '#fff',
-          border: '1px solid #ccc',
-          borderRadius: 8,
-          cursor: loading ? 'not-allowed' : 'pointer',
-        }}
-      >
-        Continue with Google
-      </button>
-      <button
-        type="button"
-        onClick={() => { setIsRegister(!isRegister); setError(''); }}
-        style={{ marginTop: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: 14 }}
-      >
-        {isRegister ? 'Already have an account? Sign in' : 'Need an account? Register'}
-      </button>
+        <button
+          type="button"
+          className="login-toggle"
+          onClick={() => { setIsRegister(!isRegister); setError(''); }}
+        >
+          {isRegister ? 'Already have an account? Sign in' : 'Need an account? Register'}
+        </button>
+      </div>
     </div>
   );
 }

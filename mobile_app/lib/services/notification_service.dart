@@ -1,3 +1,8 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crypto/crypto.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -7,16 +12,33 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // No UI in background; opening notification is handled by onMessageOpenedApp when app starts
 }
 
-/// Handles FCM: foreground messages show in-app; opening a notification navigates to article.
+/// Handles FCM: get device token, save to Firestore; foreground messages show in-app; opening navigates to article.
 class NotificationService {
   NotificationService({required GlobalKey<ScaffoldMessengerState> scaffoldKey})
       : _scaffoldKey = scaffoldKey;
 
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey;
   GoRouter? _router;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   void setGoRouter(GoRouter router) {
     _router = router;
+  }
+
+  /// Persist this device's FCM token under the user so the Cloud Function can send to all devices.
+  Future<void> saveTokenForUser(String uid) async {
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token == null || token.isEmpty) return;
+    final tokenId = sha256.convert(utf8.encode(token)).toString();
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('fcmTokens')
+        .doc(tokenId)
+        .set({
+      'token': token,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> init() async {
@@ -26,7 +48,18 @@ class NotificationService {
       badge: true,
       sound: true,
     );
-    await FirebaseMessaging.instance.subscribeToTopic('news');
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) await saveTokenForUser(user.uid);
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((_) async {
+      final u = FirebaseAuth.instance.currentUser;
+      if (u != null) await saveTokenForUser(u.uid);
+    });
+
+    FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user != null) await saveTokenForUser(user.uid);
+    });
 
     // Foreground: show in-app SnackBar so the app "responds" to a notification from the web
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {

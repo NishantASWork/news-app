@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   collection,
   orderBy,
@@ -12,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Article } from '@/types/article';
+import type { Category } from '@/types/category';
 import type { Timestamp } from 'firebase/firestore';
 
 function toArticle(id: string, data: Record<string, unknown>): Article {
@@ -28,9 +30,45 @@ function toArticle(id: string, data: Record<string, unknown>): Article {
   };
 }
 
+/** Search by title only: all words must match. */
+function searchTerms(q: string): string[] {
+  return q
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((s) => s.length > 0);
+}
+
+function matchesSearch(article: Article, q: string): boolean {
+  const terms = searchTerms(q);
+  if (terms.length === 0) return true;
+  const title = article.title.toLowerCase();
+  return terms.every((term) => title.includes(term));
+}
+
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedQuery = useDebounce(searchQuery, 280);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'categories'), (snap) => {
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: (data.name as string) ?? '',
+          slug: (data.slug as string) ?? '',
+          order: (data.order as number) ?? 0,
+        };
+      });
+      list.sort((a, b) => a.order - b.order);
+      setCategories(list);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const q = query(
@@ -46,74 +84,155 @@ export default function ArticlesPage() {
     return () => unsub();
   }, []);
 
+  const filteredArticles = useMemo(
+    () => articles.filter((a) => matchesSearch(a, debouncedQuery)),
+    [articles, debouncedQuery]
+  );
+
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this article?')) return;
     await deleteDoc(doc(db, 'articles', id));
   };
 
-  if (loading) return <p>Loading articles...</p>;
+  if (loading) {
+    return (
+      <div>
+        <div className="articles-header">
+          <div className="skeleton" style={{ width: 160, height: 32 }} />
+          <div className="skeleton" style={{ width: 120, height: 40 }} />
+        </div>
+        <div className="card" style={{ padding: 24 }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '16px 0', borderBottom: '1px solid var(--admin-border)' }}>
+              <div className="skeleton" style={{ width: 80, height: 56, borderRadius: 8 }} />
+              <div style={{ flex: 1 }}>
+                <div className="skeleton" style={{ width: '70%', height: 18, marginBottom: 8 }} />
+                <div className="skeleton" style={{ width: '40%', height: 14 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const categoryName = (categoryId: string) =>
+    categories.find((c) => c.id === categoryId)?.name ?? '';
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1>Articles</h1>
-        <Link
-          href="/articles/new"
-          style={{
-            padding: '10px 20px',
-            background: '#1976d2',
-            color: 'white',
-            borderRadius: 8,
-          }}
-        >
+      <div className="articles-header">
+        <h1 className="page-title" style={{ marginBottom: 0 }}>Articles</h1>
+        <Link href="/articles/new" className="btn btn-primary">
+          <PlusIcon />
           Add article
         </Link>
       </div>
-      <ul style={{ listStyle: 'none' }}>
-        {articles.map((a) => (
-          <li
-            key={a.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: '12px 0',
-              borderBottom: '1px solid #eee',
-            }}
-          >
-            {a.imageUrl && (
-              <img
-                src={a.imageUrl}
-                alt=""
-                style={{ width: 80, height: 56, objectFit: 'cover', borderRadius: 4 }}
-              />
-            )}
-            <div style={{ flex: 1 }}>
-              <Link href={`/articles/${a.id}`} style={{ fontWeight: 600 }}>
-                {a.title}
-              </Link>
-              <div style={{ fontSize: 14, color: '#666' }}>
-                {a.author} · {a.publishedAt.toLocaleDateString()}
-              </div>
-            </div>
+      {articles.length > 0 && (
+        <div className="admin-search-wrap" style={{ marginBottom: 16 }}>
+          <div className="admin-search-field">
+            <span className="admin-search-icon" aria-hidden>
+              <SearchIcon />
+            </span>
+            <input
+              type="search"
+              className="input admin-search-input"
+              placeholder="Search by article title…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search articles"
+            />
+          </div>
+          {searchQuery && (
             <button
               type="button"
-              onClick={() => handleDelete(a.id)}
-              style={{
-                padding: '6px 12px',
-                background: '#fff',
-                border: '1px solid #ccc',
-                borderRadius: 6,
-                cursor: 'pointer',
-                color: '#c62828',
-              }}
+              className="admin-search-clear"
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
             >
-              Delete
+              <ClearIcon />
             </button>
-          </li>
-        ))}
-      </ul>
-      {articles.length === 0 && <p style={{ color: '#666' }}>No articles yet.</p>}
+          )}
+          <span className="admin-search-count">
+            {searchQuery
+              ? `${filteredArticles.length} of ${articles.length} article${articles.length === 1 ? '' : 's'}`
+              : `${articles.length} article${articles.length === 1 ? '' : 's'}`}
+          </span>
+        </div>
+      )}
+      <div className="card">
+        {articles.length === 0 ? (
+          <div className="empty-state">
+            <p style={{ marginBottom: 8 }}>No articles yet.</p>
+            <Link href="/articles/new" className="btn btn-primary" style={{ marginTop: 16 }}>
+              Add your first article
+            </Link>
+          </div>
+        ) : filteredArticles.length === 0 ? (
+          <div className="empty-state">
+            <p style={{ marginBottom: 8 }}>
+              No articles match &quot;{searchQuery.trim()}&quot;. Try different words or clear search.
+            </p>
+          </div>
+        ) : (
+          <ul className="articles-list">
+            {filteredArticles.map((a) => (
+              <li key={a.id} className="articles-item">
+                {a.imageUrl ? (
+                  <img src={a.imageUrl} alt="" className="articles-item-image" />
+                ) : (
+                  <div className="articles-item-placeholder" />
+                )}
+                <div className="articles-item-body">
+                  <Link href={`/articles/${a.id}`} className="articles-item-title">
+                    {a.title}
+                  </Link>
+                  <div className="articles-item-meta">
+                    {categoryName(a.categoryId) && (
+                      <span style={{ marginRight: 8 }}>{categoryName(a.categoryId)}</span>
+                    )}
+                    {a.author} · {a.publishedAt.toLocaleDateString()}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => handleDelete(a.id)}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+  );
+}
+
+function ClearIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
   );
 }

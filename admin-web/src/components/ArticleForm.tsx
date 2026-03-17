@@ -12,7 +12,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { uploadArticleImage } from '@/lib/storage';
-import type { Article } from '@/types/article';
 import type { Category } from '@/types/category';
 import type { Timestamp as FSTimestamp } from 'firebase/firestore';
 
@@ -117,126 +116,130 @@ export function ArticleForm({ articleId, onSaved, onCancel }: ArticleFormProps) 
     }
   };
 
-  if (loading) return <p>Loading...</p>;
-
-  const formStyle = { display: 'flex', flexDirection: 'column' as const, gap: 16, maxWidth: 600 };
-  const inputStyle = { padding: 12, border: '1px solid #ccc', borderRadius: 8 };
-  const labelStyle = { fontWeight: 600, fontSize: 14 };
+  if (loading) {
+    return (
+      <div className="card" style={{ padding: 24 }}>
+        <div className="skeleton" style={{ width: '100%', height: 44, marginBottom: 20 }} />
+        <div className="skeleton" style={{ width: '80%', height: 44, marginBottom: 20 }} />
+        <div className="skeleton" style={{ width: '100%', height: 120, marginBottom: 20 }} />
+      </div>
+    );
+  }
 
   return (
-    <form onSubmit={handleSubmit} style={formStyle}>
-      <div>
-        <label style={labelStyle}>Title</label>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          style={{ ...inputStyle, width: '100%' }}
-        />
-      </div>
-      <div>
-        <label style={labelStyle}>Description</label>
-        <input
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          style={{ ...inputStyle, width: '100%' }}
-        />
-      </div>
-      <div>
-        <label style={labelStyle}>Content</label>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          required
-          rows={6}
-          style={{ ...inputStyle, width: '100%' }}
-        />
-      </div>
-      <div>
-        <label style={labelStyle}>Author</label>
-        <input
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          required
-          style={{ ...inputStyle, width: '100%' }}
-        />
-      </div>
-      <div>
-        <label style={labelStyle}>Category</label>
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="">— Select —</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label style={labelStyle}>Publish date</label>
-        <input
-          type="datetime-local"
-          value={publishedAt}
-          onChange={(e) => setPublishedAt(e.target.value)}
-          style={inputStyle}
-        />
-      </div>
-      <div>
-        <label style={labelStyle}>Image</label>
-        {imageUrl && (
-          <div style={{ marginBottom: 8 }}>
-            <img
-              src={imageUrl}
-              alt="Current"
-              style={{ maxWidth: 200, maxHeight: 120, objectFit: 'cover', borderRadius: 8 }}
+    <div className="card article-form-card">
+      <form onSubmit={handleSubmit} className="article-form">
+        <div className="form-group">
+          <label className="label" htmlFor="title">Title</label>
+          <input
+            id="title"
+            type="text"
+            className="input"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            placeholder="Article title"
+          />
+        </div>
+        <div className="form-group">
+          <label className="label" htmlFor="description">Description</label>
+          <input
+            id="description"
+            type="text"
+            className="input"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Short description"
+          />
+        </div>
+        <div className="form-group">
+          <label className="label" htmlFor="content">Content</label>
+          <textarea
+            id="content"
+            className="textarea"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+            rows={6}
+            placeholder="Full article content..."
+          />
+        </div>
+        <div className="article-form-row">
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="label" htmlFor="author">Author</label>
+            <input
+              id="author"
+              type="text"
+              className="input"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              required
+              placeholder="Author name"
             />
           </div>
-        )}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            setImageFile(f ?? null);
-            if (f) setImageUrl(null);
-          }}
-        />
-        {imageFile && <span style={{ marginLeft: 8 }}>{imageFile.name}</span>}
-      </div>
-      {error && <p style={{ color: 'crimson' }}>{error}</p>}
-      <div style={{ display: 'flex', gap: 12 }}>
-        <button
-          type="submit"
-          disabled={saving}
-          style={{
-            padding: '10px 20px',
-            background: '#1976d2',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            cursor: saving ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{
-            padding: '10px 20px',
-            background: '#fff',
-            border: '1px solid #ccc',
-            borderRadius: 8,
-            cursor: 'pointer',
-          }}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="label" htmlFor="category">Category</label>
+            <select
+              id="category"
+              className="select"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              <option value="">— Select —</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="label" htmlFor="publishedAt">Publish date</label>
+          <input
+            id="publishedAt"
+            type="datetime-local"
+            className="input"
+            value={publishedAt}
+            onChange={(e) => setPublishedAt(e.target.value)}
+          />
+        </div>
+        <div className="form-group">
+          <label className="label">Image</label>
+          <div className="article-form-image">
+            {imageUrl && (
+              <div className="article-form-image-preview">
+                <img src={imageUrl} alt="Current" />
+              </div>
+            )}
+            <div className="article-form-image-upload">
+              <input
+                type="file"
+                accept="image/*"
+                id="image-upload"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  setImageFile(f ?? null);
+                  if (f) setImageUrl(null);
+                }}
+                className="article-form-file-input"
+              />
+              <label htmlFor="image-upload" className="article-form-file-label">
+                {imageFile ? imageFile.name : 'Choose image'}
+              </label>
+            </div>
+          </div>
+        </div>
+        {error && <p className="article-form-error">{error}</p>}
+        <div className="article-form-actions">
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

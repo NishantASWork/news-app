@@ -1,3 +1,9 @@
+// Redis-style cache-aside: we keep an in-memory cache with TTL (see _cacheTtl).
+// List and detail reads check cache first; on miss or expiry we hit Firestore and
+// populate the cache. Paginated/filtered list queries only use cache for the first
+// page with no category filter. clearCache() invalidates everything (e.g. on
+// pull-to-refresh). See project README for the high-level explanation.
+
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/article.dart';

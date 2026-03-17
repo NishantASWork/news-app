@@ -1,3 +1,0 @@
-/// On web, process environment is not available; use --dart-define=IMGBB_API_KEY=...
-String getImgBbApiKey() =>
-    const String.fromEnvironment('IMGBB_API_KEY', defaultValue: '');
