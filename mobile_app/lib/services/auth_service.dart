@@ -35,7 +35,8 @@ class AuthService extends ChangeNotifier {
     }
     try {
       final doc = await _firestore.collection('users').doc(user.uid).get();
-      _isAdmin = (doc.data()?['role'] == 'admin');
+      final role = doc.data()?['role'];
+      _isAdmin = role != null && role.toString().toLowerCase().trim() == 'admin';
     } catch (_) {
       _isAdmin = false;
     }
@@ -74,6 +75,8 @@ class AuthService extends ChangeNotifier {
     final userCred = await _auth.signInWithCredential(credential);
     if (userCred.user != null) {
       await _upsertUser(userCred.user!);
+      await _loadRole(userCred.user!);
+      notifyListeners();
     }
   }
 
@@ -82,7 +85,11 @@ class AuthService extends ChangeNotifier {
       email: email,
       password: password,
     );
-    if (userCred.user != null) await _upsertUser(userCred.user!);
+    if (userCred.user != null) {
+      await _upsertUser(userCred.user!);
+      await _loadRole(userCred.user!);
+      notifyListeners();
+    }
   }
 
   Future<void> registerWithEmail(String email, String password) async {
@@ -90,7 +97,11 @@ class AuthService extends ChangeNotifier {
       email: email,
       password: password,
     );
-    if (userCred.user != null) await _upsertUser(userCred.user!);
+    if (userCred.user != null) {
+      await _upsertUser(userCred.user!);
+      await _loadRole(userCred.user!);
+      notifyListeners();
+    }
   }
 
   Future<void> _upsertUser(User user) async {
