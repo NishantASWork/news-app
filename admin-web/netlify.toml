@@ -1,6 +1,10 @@
-# Next.js app – build and runtime
+# Next.js app – requires Essential Next.js plugin so routes and API work (no 404 at root).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 [build]
   command = "npm run build"
+  # Do not set publish – the plugin deploys the Next.js output.
 
 # Allow NEXT_PUBLIC_* and ImgBB key in build output (they are inlined by Next.js by design).
 # Netlify secrets scanning would otherwise fail the build.
