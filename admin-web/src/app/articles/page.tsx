@@ -60,6 +60,7 @@ export default function ArticlesPage() {
         return {
           id: d.id,
           name: (data.name as string) ?? '',
+          description: (data.description as string) ?? '',
           slug: (data.slug as string) ?? '',
           order: (data.order as number) ?? 0,
         };

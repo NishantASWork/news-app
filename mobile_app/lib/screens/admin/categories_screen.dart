@@ -57,7 +57,11 @@ class AdminCategoriesScreen extends StatelessWidget {
               return Card(
                 child: ListTile(
                   title: Text(c.name),
-                  subtitle: Text(c.slug),
+                  subtitle: Text(
+                    c.description.isNotEmpty ? c.description : c.slug,
+                    maxLines: c.description.isNotEmpty ? 3 : 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () => _deleteCategory(context, c),
@@ -73,37 +77,50 @@ class AdminCategoriesScreen extends StatelessWidget {
 
   Future<void> _showAddDialog(BuildContext context) async {
     final nameController = TextEditingController();
+    final descriptionController = TextEditingController();
     final slugController = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Add category'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (_) {
+                  if (slugController.text.isEmpty) {
+                    slugController.text = nameController.text
+                        .toLowerCase()
+                        .replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+                  }
+                },
               ),
-              onChanged: (_) {
-                if (slugController.text.isEmpty) {
-                  slugController.text = nameController.text
-                      .toLowerCase()
-                      .replaceAll(RegExp(r'[^a-z0-9]+'), '-');
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: slugController,
-              decoration: const InputDecoration(
-                labelText: 'Slug',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: slugController,
+                decoration: const InputDecoration(
+                  labelText: 'Slug',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -120,6 +137,7 @@ class AdminCategoriesScreen extends StatelessWidget {
     if (ok == true && context.mounted) {
       await context.read<CategoryService>().createCategory({
         'name': nameController.text.trim(),
+        'description': descriptionController.text.trim(),
         'slug': slugController.text.trim(),
         'order': 0,
       });
@@ -128,6 +146,7 @@ class AdminCategoriesScreen extends StatelessWidget {
       }
     }
     nameController.dispose();
+    descriptionController.dispose();
     slugController.dispose();
   }
 

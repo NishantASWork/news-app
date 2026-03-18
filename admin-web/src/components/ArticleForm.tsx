@@ -44,6 +44,7 @@ export function ArticleForm({ articleId, onSaved, onCancel }: ArticleFormProps) 
       const list = snap.docs.map((d) => ({
         id: d.id,
         name: (d.data().name as string) ?? '',
+        description: (d.data().description as string) ?? '',
         slug: (d.data().slug as string) ?? '',
         order: (d.data().order as number) ?? 0,
       }));
