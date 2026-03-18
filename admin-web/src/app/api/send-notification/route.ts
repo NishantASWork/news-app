@@ -14,6 +14,31 @@ function isServiceAccountKey(obj: unknown): obj is admin.ServiceAccount {
   return typeof (o.private_key ?? o.privateKey) === 'string';
 }
 
+function googleServicesJsonPaths(): string[] {
+  const cwd = process.cwd();
+  const fromEnv = process.env.GOOGLE_SERVICES_JSON?.trim();
+  const list = [
+    ...(fromEnv ? [fromEnv] : []),
+    path.join(cwd, ROOT_GOOGLE_SERVICES),
+    path.join(cwd, '..', ROOT_GOOGLE_SERVICES),
+    path.join(cwd, '..', '..', ROOT_GOOGLE_SERVICES),
+    path.join(cwd, '..', 'mobile_app', ROOT_GOOGLE_SERVICES),
+  ];
+  return Array.from(new Set(list.filter(Boolean)));
+}
+
+function projectIdFromGoogleServices(parsed: unknown): string | null {
+  const p = parsed as Record<string, unknown>;
+  const info = p.project_info as Record<string, unknown> | undefined;
+  const id = info?.project_id;
+  return typeof id === 'string' && id.length > 0 ? id : null;
+}
+
+/**
+ * Prefers service account JSON. If only Android google-services.json exists, uses its
+ * project_id + Application Default Credentials (e.g. gcloud auth application-default login).
+ * FCM still requires server credentials — ADC must be a user/service account with Firebase access.
+ */
 function getAdminApp(): admin.app.App {
   if (admin.apps.length > 0) {
     return admin.app() as admin.app.App;
@@ -32,34 +57,49 @@ function getAdminApp(): admin.app.App {
     return admin.initializeApp({ credential: admin.credential.cert(keyPath) });
   }
   const cwd = process.cwd();
-  const candidates = [
-    path.join(cwd, ROOT_GOOGLE_SERVICES),
-    path.join(cwd, '..', ROOT_GOOGLE_SERVICES),
+  const serviceAccountPaths = [
     path.join(cwd, MOBILE_SERVICE_JSON),
     path.join(cwd, '..', MOBILE_SERVICE_JSON),
   ];
-  for (const filePath of candidates) {
+  for (const filePath of serviceAccountPaths) {
     try {
-      if (fs.existsSync(filePath)) {
-        const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as unknown;
-        if (!isServiceAccountKey(parsed)) {
-          const p = parsed as Record<string, unknown>;
-          if (p.project_info != null || p.client != null) {
-            throw new Error(
-              'google-services.json is the Android client config. For sending notifications, use a service account key: Firebase Console → Project settings → Service accounts → Generate new private key. Save that JSON as mobile_app/service.json or set FIREBASE_SERVICE_ACCOUNT_JSON.'
-            );
-          }
-          continue;
-        }
+      if (!fs.existsSync(filePath)) continue;
+      const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as unknown;
+      if (isServiceAccountKey(parsed)) {
         return admin.initializeApp({ credential: admin.credential.cert(parsed) });
       }
-    } catch (e) {
-      if (e instanceof Error && e.message.includes('google-services.json is the Android')) throw e;
-      // skip invalid or unreadable file
+    } catch {
+      // skip
+    }
+  }
+  for (const filePath of googleServicesJsonPaths()) {
+    try {
+      if (!fs.existsSync(filePath)) continue;
+      const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as unknown;
+      if (isServiceAccountKey(parsed)) {
+        return admin.initializeApp({ credential: admin.credential.cert(parsed) });
+      }
+    } catch {
+      // skip
+    }
+  }
+  for (const filePath of googleServicesJsonPaths()) {
+    try {
+      if (!fs.existsSync(filePath)) continue;
+      const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as unknown;
+      const projectId = projectIdFromGoogleServices(parsed);
+      if (projectId) {
+        return admin.initializeApp({
+          credential: admin.credential.applicationDefault(),
+          projectId,
+        });
+      }
+    } catch {
+      // skip
     }
   }
   throw new Error(
-    'Set FIREBASE_SERVICE_ACCOUNT_JSON or GOOGLE_APPLICATION_CREDENTIALS in .env.local, or add a Firebase service account JSON (not google-services.json) at mobile_app/service.json (Project settings → Service accounts → Generate new key).'
+    'Could not initialize Firebase Admin. Either: (1) Add mobile_app/service.json (service account from Firebase Console → Project settings → Service accounts → Generate new private key), or set FIREBASE_SERVICE_ACCOUNT_JSON / GOOGLE_APPLICATION_CREDENTIALS. Or (2) Keep google-services.json at repo root (or set GOOGLE_SERVICES_JSON) and run: gcloud auth application-default login — your Google account needs access to this Firebase project.'
   );
 }
 

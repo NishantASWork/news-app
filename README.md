@@ -93,10 +93,12 @@ Notifications are sent from the **admin-web** API route using your Firebase serv
    - **Build** → **Cloud Messaging** (no extra config).  
    - **Project settings** → **Service accounts** → **Generate new private key** → download the JSON file.
 
-2. **Single `google-services.json` at repo root**  
+2. **`google-services.json` at repo root**  
    Put your Firebase Android config at **`google-services.json`** in the repo root (same folder as `admin-web/`, `mobile_app/`).  
-   - **Android**: The mobile app build copies it into `mobile_app/android/app/` automatically so the Google Services plugin uses it.  
-   - **Admin send-notification**: That file is the *client* config and cannot send FCM. For “Send to all devices” you need a **service account key**: Firebase Console → Project settings → Service accounts → Generate new private key. Save that JSON as **`mobile_app/service.json`** (or set `FIREBASE_SERVICE_ACCOUNT_JSON` / `GOOGLE_APPLICATION_CREDENTIALS` in `admin-web/.env.local`). The API route checks repo-root `google-services.json` first and, if it’s the client config, tells you to use a service account key.
+   - **Android**: The mobile app build copies it into `mobile_app/android/app/` automatically.  
+   - **Admin send-notification**: The API reads **`project_id`** from that file. You still need **server** credentials to call FCM/Firestore Admin:
+     - **Recommended:** Service account JSON → **`mobile_app/service.json`** or `FIREBASE_SERVICE_ACCOUNT_JSON` / `GOOGLE_APPLICATION_CREDENTIALS` in `admin-web/.env.local`.  
+     - **Local dev:** With only `google-services.json`, run **`gcloud auth application-default login`** (Google account must have access to that Firebase project). Optional: set **`GOOGLE_SERVICES_JSON`** in `.env.local` to an absolute path if the file isn’t at repo root.
 
 3. **Firestore rules** (so the app can write FCM tokens):
    ```bash
@@ -124,7 +126,7 @@ Notifications are sent from the **admin-web** API route using your Firebase serv
 | 4 | **Mobile app:** run the app on a device/emulator, **sign in** (email or Google) once so the token is saved to Firestore. |
 | 5 | **Admin:** run `cd admin-web && npm run dev`, open the app, click **“Send to all devices”**. |
 
-If the admin shows *“google-services.json is the Android client config…”*, add **`mobile_app/service.json`** (the service account key from step 2). If it says *“No device tokens registered”*, open the mobile app and sign in, then try again.
+If send fails with *default credentials* / *permission denied*, add **`mobile_app/service.json`** (service account key). If it says *“No device tokens registered”*, open the mobile app and sign in, then try again.
 
 ## Deploy Firestore rules
 
