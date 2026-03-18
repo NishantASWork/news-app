@@ -35,6 +35,15 @@ function projectIdFromGoogleServices(parsed: unknown): string | null {
 }
 
 /**
+ * Resolves a path (relative or absolute). Relative paths are resolved from cwd.
+ */
+function resolveCredentialPath(rawPath: string): string {
+  const trimmed = rawPath.trim();
+  if (path.isAbsolute(trimmed)) return trimmed;
+  return path.resolve(process.cwd(), trimmed);
+}
+
+/**
  * Prefers service account JSON. If only Android google-services.json exists, uses its
  * project_id + Application Default Credentials (e.g. gcloud auth application-default login).
  * FCM still requires server credentials — ADC must be a user/service account with Firebase access.
@@ -54,10 +63,26 @@ function getAdminApp(): admin.app.App {
     }
   }
   if (keyPath) {
-    return admin.initializeApp({ credential: admin.credential.cert(keyPath) });
+    const resolvedPath = resolveCredentialPath(keyPath);
+    if (!fs.existsSync(resolvedPath)) {
+      throw new Error(
+        `GOOGLE_APPLICATION_CREDENTIALS file not found: ${resolvedPath}. Use an absolute path or a path relative to the project (e.g. ../mobile_app/service.json or service.json in admin-web).`
+      );
+    }
+    try {
+      const parsed = JSON.parse(fs.readFileSync(resolvedPath, 'utf8')) as unknown;
+      if (isServiceAccountKey(parsed)) {
+        return admin.initializeApp({ credential: admin.credential.cert(parsed) });
+      }
+    } catch (e) {
+      throw new Error(
+        `GOOGLE_APPLICATION_CREDENTIALS file at ${resolvedPath} is not valid service account JSON: ${e instanceof Error ? e.message : String(e)}`
+      );
+    }
   }
   const cwd = process.cwd();
   const serviceAccountPaths = [
+    path.join(cwd, 'service.json'),
     path.join(cwd, MOBILE_SERVICE_JSON),
     path.join(cwd, '..', MOBILE_SERVICE_JSON),
   ];
@@ -71,6 +96,19 @@ function getAdminApp(): admin.app.App {
     } catch {
       // skip
     }
+  }
+  try {
+    const files = fs.readdirSync(cwd);
+    const adminsdk = files.find((f) => f.includes('-firebase-adminsdk-') && f.endsWith('.json'));
+    if (adminsdk) {
+      const filePath = path.join(cwd, adminsdk);
+      const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as unknown;
+      if (isServiceAccountKey(parsed)) {
+        return admin.initializeApp({ credential: admin.credential.cert(parsed) });
+      }
+    }
+  } catch {
+    // skip
   }
   for (const filePath of googleServicesJsonPaths()) {
     try {
@@ -136,9 +174,12 @@ async function sendToAllDevices(
   return { success, failure };
 }
 
+const PUSH_NOT_CONFIGURED =
+  'Push notifications are not configured. Add GOOGLE_APPLICATION_CREDENTIALS (path to service account JSON) or FIREBASE_SERVICE_ACCOUNT_JSON to .env to enable. Firebase Console → Project settings → Service accounts → Generate new private key.';
+
 /**
  * POST /api/send-notification – send push to all registered devices.
- * Uses FIREBASE_SERVICE_ACCOUNT_JSON (no Cloud Functions / Blaze needed).
+ * Works with only NEXT_PUBLIC_* env vars; returns ok: false with a message if server credentials are missing.
  */
 export async function POST() {
   try {
@@ -177,7 +218,19 @@ export async function POST() {
       totalTokens: tokens.length,
     });
   } catch (e) {
+    console.error(e);
     const message = e instanceof Error ? e.message : String(e);
+    const isMissingCreds =
+      message.includes('Could not initialize Firebase Admin') ||
+      message.includes('service account') ||
+      message.includes('GOOGLE_APPLICATION_CREDENTIALS') ||
+      message.includes('FIREBASE_SERVICE_ACCOUNT') ||
+      message.includes('ENOENT') ||
+      message.includes('no such file or directory') ||
+      message.includes('does not exist');
+    if (isMissingCreds) {
+      return NextResponse.json({ ok: false, error: PUSH_NOT_CONFIGURED }, { status: 200 });
+    }
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
