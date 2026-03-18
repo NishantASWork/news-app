@@ -25,8 +25,18 @@ class NotificationService {
     _router = router;
   }
 
-  /// Persist this device's FCM token under the user so the Cloud Function can send to all devices.
+  /// Request push permission, then persist FCM token only if granted (authorized or provisional).
   Future<void> saveTokenForUser(String uid) async {
+    final settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    final status = settings.authorizationStatus;
+    if (status != AuthorizationStatus.authorized &&
+        status != AuthorizationStatus.provisional) {
+      return;
+    }
     final token = await FirebaseMessaging.instance.getToken();
     if (token == null || token.isEmpty) return;
     final tokenId = sha256.convert(utf8.encode(token)).toString();
@@ -43,11 +53,6 @@ class NotificationService {
 
   Future<void> init() async {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
 
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) await saveTokenForUser(user.uid);
