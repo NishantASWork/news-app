@@ -3,12 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Category {
   final String id;
   final String name;
+  final String description;
   final String slug;
   final int order;
 
   const Category({
     required this.id,
     required this.name,
+    this.description = '',
     required this.slug,
     this.order = 0,
   });
@@ -18,12 +20,18 @@ class Category {
     return Category(
       id: doc.id,
       name: data['name'] as String? ?? '',
+      description: data['description'] as String? ?? '',
       slug: data['slug'] as String? ?? '',
       order: (data['order'] as num?)?.toInt() ?? 0,
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {'name': name, 'slug': slug, 'order': order};
+    return {
+      'name': name,
+      'description': description,
+      'slug': slug,
+      'order': order,
+    };
   }
 }
