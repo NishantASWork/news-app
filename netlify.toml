@@ -1,6 +1,5 @@
 # Netlify configuration for news admin-web (Next.js)
 # https://docs.netlify.com/configure-builds/file-based-configuration/
-# Do not set publish – Netlify's Next.js adapter (OpenNext) handles output automatically.
 
 [build]
   base = "admin-web"
@@ -9,11 +8,9 @@
 [build.environment]
   NODE_VERSION = "18"
   # NEXT_PUBLIC_* values are inlined into the Next.js client bundle by design.
-  # Netlify secret scanning flags them if those vars are marked "secret" in the UI.
-  # Omit scanning for these keys (Firebase web config is public; move ImgBB to a server route if you need to hide it).
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_FIREBASE_API_KEY,NEXT_PUBLIC_FIREBASE_APP_ID,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,NEXT_PUBLIC_FIREBASE_PROJECT_ID,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,NEXT_PUBLIC_IMGBB_API_KEY"
   # FCM / push: set FIREBASE_SERVICE_ACCOUNT_JSON in Netlify UI (Site settings → Environment variables).
-  # Paste the full contents of your *-firebase-adminsdk-*.json file. Do not commit that file (it's in .gitignore).
 
-# Next.js on Netlify uses the Essential Next.js plugin (auto-installed)
-# for SSR, API routes, and image optimization.
+# Required for Next.js SSR, API routes, and correct routing on Netlify (fixes 404 on /)
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
