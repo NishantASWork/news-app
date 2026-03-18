@@ -1,0 +1,13 @@
+# Netlify configuration for news admin-web (Next.js)
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  base = "admin-web"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Next.js on Netlify uses the Essential Next.js plugin (auto-installed)
+# for SSR, API routes, and image optimization.

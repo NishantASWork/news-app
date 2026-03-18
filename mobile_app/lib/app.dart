@@ -72,41 +72,12 @@ class App extends StatelessWidget {
             final onLogin = loc == '/login';
             if (!isLoggedIn && !onLogin) return '/login';
             if (isLoggedIn && onLogin) return '/';
-            if (isLoggedIn && (loc.startsWith('/admin') || loc == '/admin')) {
-              if (!auth.isAdmin) return '/';
-            }
             return null;
           },
           routes: [
             GoRoute(
               path: '/login',
               builder: (_, __) => const LoginScreen(),
-            ),
-            ShellRoute(
-              builder: (context, state, child) => AdminLayout(child: child),
-              routes: [
-                GoRoute(
-                  path: '/admin/articles',
-                  builder: (_, __) => const AdminArticlesScreen(),
-                  routes: [
-                    GoRoute(
-                      path: 'new',
-                      builder: (_, __) => const AdminArticleFormScreen(articleId: 'new'),
-                    ),
-                    GoRoute(
-                      path: ':id',
-                      builder: (context, state) {
-                        final id = state.pathParameters['id']!;
-                        return AdminArticleFormScreen(articleId: id == 'new' ? 'new' : id);
-                      },
-                    ),
-                  ],
-                ),
-                GoRoute(
-                  path: '/admin/categories',
-                  builder: (_, __) => const AdminCategoriesScreen(),
-                ),
-              ],
             ),
             StatefulShellRoute.indexedStack(
               builder: (context, state, navigationShell) => Scaffold(

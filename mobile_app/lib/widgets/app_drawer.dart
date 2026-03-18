@@ -8,7 +8,6 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin = context.watch<AuthService>().isAdmin;
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -20,15 +19,6 @@ class AppDrawer extends StatelessWidget {
               style: TextStyle(color: Colors.white, fontSize: 24),
             ),
           ),
-          if (isAdmin)
-            ListTile(
-              leading: const Icon(Icons.admin_panel_settings),
-              title: const Text('Admin panel'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/admin/articles');
-              },
-            ),
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Sign out'),
