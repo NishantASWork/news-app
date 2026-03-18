@@ -1,10 +1,10 @@
 # Netlify configuration for news admin-web (Next.js)
 # https://docs.netlify.com/configure-builds/file-based-configuration/
+# Do not set publish – Netlify's Next.js adapter (OpenNext) handles output automatically.
 
 [build]
   base = "admin-web"
   command = "npm run build"
-  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
